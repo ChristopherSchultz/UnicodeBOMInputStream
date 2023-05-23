@@ -5,6 +5,9 @@ package net.pempek.unicode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The <code>UnicodeBOMInputStream</code> class wraps any
@@ -292,4 +295,54 @@ public class UnicodeBOMInputStream extends InputStream
   private final BOM                 bom;
   private       boolean             skipped = false;
 
+  /**
+   * Converts this UnicodeInputStream into a Reader ready to read. Uses UTF-8
+   * as the default character set if no BOM is found.
+   *
+   * @return An InputStreamReader with the proper character set, skipping the BOM.
+   * @throws IOException when trying to skip the BOM from the wrapped
+   * <code>InputStream</code> object.
+   */
+  public Reader toReader()
+    throws IOException
+  {
+     return toReader(StandardCharsets.UTF_8);
+  }
+
+  /**
+   * Converts this UnicodeInputStream into a Reader ready to read.
+   *
+   * @param defaultCharset The default character set to use for the Reader
+   *                       if no byte order mark (BOM) could be found.
+   *
+   * @return An InputStreamReader with the proper character set, skipping the BOM.
+   * @throws IOException when trying to skip the BOM from the wrapped
+   * <code>InputStream</code> object.
+   */
+  public Reader toReader(Charset defaultCharset)
+      throws IOException
+  {
+    Charset charset;
+
+    BOM bom = getBOM();
+    if(BOM.UTF_8 == bom) {
+      charset = StandardCharsets.UTF_8;
+      skipBOM();
+    } else if(BOM.UTF_16_LE == bom) {
+      charset = StandardCharsets.UTF_16LE;
+      skipBOM();
+    } else if(BOM.UTF_16_BE == bom) {
+      charset = StandardCharsets.UTF_16BE;
+      skipBOM();
+    } else if(BOM.UTF_32_LE == bom) {
+      charset = UTF_32_LE;
+      skipBOM();
+    } else if(BOM.UTF_32_BE == bom) {
+      charset = UTF_32_BE;
+      skipBOM();
+    } else {
+      charset = defaultCharset;
+    }
+    return new InputStreamReader(this, charset);
+  }
 } // UnicodeBOMInputStream
